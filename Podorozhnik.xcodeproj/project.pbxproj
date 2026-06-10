@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BEFF03512FD9E41C00D9EA98 /* README 2.md in Resources */ = {isa = PBXBuildFile; fileRef = BEFF034F2FD9E41600D9EA98 /* README 2.md */; };
 		BEFF03592FD9E53200D9EA98 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BEFF03582FD9E53100D9EA98 /* WidgetKit.framework */; };
 		BEFF035B2FD9E53200D9EA98 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BEFF035A2FD9E53200D9EA98 /* SwiftUI.framework */; };
 		BEFF036A2FD9E53300D9EA98 /* PodorozhnikWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BEFF03562FD9E53100D9EA98 /* PodorozhnikWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -38,6 +39,7 @@
 
 /* Begin PBXFileReference section */
 		BEFF03412FD9E38400D9EA98 /* Podorozhnik.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Podorozhnik.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BEFF034F2FD9E41600D9EA98 /* README 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "README 2.md"; sourceTree = "<group>"; };
 		BEFF03562FD9E53100D9EA98 /* PodorozhnikWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PodorozhnikWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BEFF03582FD9E53100D9EA98 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		BEFF035A2FD9E53200D9EA98 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -94,6 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				BEFF03712FD9E60900D9EA98 /* PodorozhnikWidgetExtension.entitlements */,
+				BEFF034F2FD9E41600D9EA98 /* README 2.md */,
 				BEFF03432FD9E38400D9EA98 /* Podorozhnik */,
 				BEFF035C2FD9E53200D9EA98 /* PodorozhnikWidget */,
 				BEFF03572FD9E53100D9EA98 /* Frameworks */,
@@ -211,6 +214,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BEFF03512FD9E41C00D9EA98 /* README 2.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
