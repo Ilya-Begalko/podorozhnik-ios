@@ -1,34 +1,54 @@
 import SwiftUI
-
+import WidgetKit
+ 
 struct TripRecord: Identifiable, Codable {
     let id: UUID
     let date: Date
     let amount: Double
     let type: RecordType
-
+ 
     enum RecordType: String, Codable {
         case trip = "Поездка"
         case topup = "Пополнение"
         case edit = "Изменение"
     }
 }
-
+ 
 struct ContentView: View {
-    @State private var balance: Double = 0.0
+    @State private var balance: Double = {
+        guard let data = try? Data(contentsOf: ContentView.dataURL()),
+              let decoded = try? JSONDecoder().decode(ContentView.AppData.self, from: data)
+        else { return 0.0 }
+        // сразу дублируем в UserDefaults для виджета
+        UserDefaults(suiteName: "group.podorozhnik")?.set(decoded.balance, forKey: "balance")
+        return decoded.balance
+    }()
+    
+    @State private var records: [TripRecord] = {
+        guard let data = try? Data(contentsOf: ContentView.dataURL()),
+              let decoded = try? JSONDecoder().decode(ContentView.AppData.self, from: data)
+        else { return [] }
+        return decoded.records
+    }()
+ 
     @State private var showTopUp = false
     @State private var showEdit = false
     @State private var showHistory = false
+    @State private var showResetAlert = false
     @State private var topUpText = ""
     @State private var editText = ""
-    @State private var records: [TripRecord] = []
-
+ 
     let farePrice: Double = 65.0
-
+    
+    var remainingTrips: Int {
+        Int(balance / farePrice)
+    }
+ 
     var body: some View {
         ZStack {
             Color(red: 0.07, green: 0.36, blue: 0.22)
                 .ignoresSafeArea()
-
+ 
             VStack(spacing: 32) {
                 HStack {
                     Button(action: {
@@ -42,9 +62,9 @@ struct ContentView: View {
                             .background(Color.white.opacity(0.15))
                             .clipShape(Circle())
                     }
-
+ 
                     Spacer()
-
+ 
                     Button(action: { showHistory = true }) {
                         Image(systemName: "clock.arrow.circlepath")
                             .font(.system(size: 18, weight: .medium))
@@ -56,9 +76,9 @@ struct ContentView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
-
+ 
                 Spacer()
-
+ 
                 VStack(spacing: 8) {
                     Image(systemName: "tram.fill")
                         .font(.system(size: 48))
@@ -67,13 +87,16 @@ struct ContentView: View {
                         .font(.title2)
                         .foregroundColor(.white.opacity(0.7))
                 }
-
+ 
                 VStack(spacing: 4) {
                     Text("Баланс")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.6))
                     Text(String(format: "%.2f ₽", balance))
                         .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    Text("≈ \(remainingTrips) поездок")
+                        .font(.system(size: 35, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
 
@@ -98,7 +121,7 @@ struct ContentView: View {
                         .cornerRadius(20)
                         .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
                     }
-
+ 
                     Button(action: {
                         if balance >= farePrice {
                             balance -= farePrice
@@ -128,8 +151,7 @@ struct ContentView: View {
                 .padding(.bottom, 40)
             }
         }
-        .onAppear { load() }
-
+ 
         .sheet(isPresented: $showTopUp) {
             VStack(spacing: 20) {
                 Text("Пополнение")
@@ -164,7 +186,7 @@ struct ContentView: View {
             .presentationDetents([.height(220)])
             .presentationDragIndicator(.visible)
         }
-
+ 
         .sheet(isPresented: $showEdit) {
             VStack(spacing: 20) {
                 Text("Изменить баланс")
@@ -180,8 +202,9 @@ struct ContentView: View {
                     .padding(.horizontal, 24)
                 Button(action: {
                     if let value = Double(editText.replacingOccurrences(of: ",", with: ".")) {
-                        addRecord(amount: value - balance, type: .edit)
+                        let diff = value - balance
                         balance = value
+                        addRecord(amount: diff, type: .edit)
                     }
                     showEdit = false
                 }) {
@@ -199,7 +222,7 @@ struct ContentView: View {
             .presentationDetents([.height(220)])
             .presentationDragIndicator(.visible)
         }
-
+ 
         .sheet(isPresented: $showHistory) {
             NavigationView {
                 Group {
@@ -243,64 +266,63 @@ struct ContentView: View {
                         Button("Закрыть") { showHistory = false }
                     }
                     ToolbarItem(placement: .navigationBarLeading) {
-                            Button(role: .destructive, action: {
-                                balance = 0.0
-                                records = []
-                                save()
-                            }) {
-                                Label("Сбросить", systemImage: "trash")
-                                    .foregroundColor(.red)
-                            }
+                        Button(action: { showResetAlert = true }) {
+                            Label("Сбросить", systemImage: "trash")
+                                .foregroundColor(.red)
                         }
+                    }
+                }
+                .alert("Сбросить всё?", isPresented: $showResetAlert) {
+                    Button("Сбросить", role: .destructive) {
+                        balance = 0.0
+                        records = []
+                        save()
+                    }
+                    Button("Отмена", role: .cancel) {}
+                } message: {
+                    Text("Баланс и история будут удалены безвозвратно")
                 }
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
     }
-
+ 
     // MARK: — Storage
-
-    private func dataURL() -> URL {
+ 
+    static func dataURL() -> URL {
         FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("podorozhnik.json")
     }
-
+ 
     struct AppData: Codable {
         var balance: Double
         var records: [TripRecord]
     }
-
+ 
     func save() {
         let data = AppData(balance: balance, records: records)
         if let encoded = try? JSONEncoder().encode(data) {
-            try? encoded.write(to: dataURL(), options: .atomic)
+            try? encoded.write(to: Self.dataURL(), options: .atomic)
         }
         // дублируем баланс в UserDefaults для виджета
         UserDefaults(suiteName: "group.podorozhnik")?.set(balance, forKey: "balance")
+        WidgetCenter.shared.reloadAllTimelines()
     }
-
-    func load() {
-        guard let data = try? Data(contentsOf: dataURL()),
-              let decoded = try? JSONDecoder().decode(AppData.self, from: data)
-        else { return }
-        balance = decoded.balance
-        records = decoded.records
-    }
-
+ 
     func addRecord(amount: Double, type: TripRecord.RecordType) {
         records.append(TripRecord(id: UUID(), date: Date(), amount: amount, type: type))
         save()
     }
-
+ 
     func formatDate(_ date: Date) -> String {
         let f = DateFormatter()
         f.dateFormat = "d MMM, HH:mm"
         f.locale = Locale(identifier: "ru_RU")
         return f.string(from: date)
     }
-
+ 
     func iconFor(_ type: TripRecord.RecordType) -> String {
         switch type {
         case .trip: return "tram.fill"
@@ -308,7 +330,7 @@ struct ContentView: View {
         case .edit: return "pencil.circle.fill"
         }
     }
-
+ 
     func colorFor(_ type: TripRecord.RecordType) -> Color {
         switch type {
         case .trip: return .red
